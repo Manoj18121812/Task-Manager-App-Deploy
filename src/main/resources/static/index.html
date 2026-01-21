@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Task Manager</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Segoe UI", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            min-height: 100vh;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .card {
+            background: #ffffff;
+            width: 100%;
+            max-width: 420px;
+            padding: 28px;
+            border-radius: 14px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.18);
+            animation: fadeIn 0.4s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        .subtitle {
+            text-align: center;
+            font-size: 13px;
+            color: #777;
+            margin-bottom: 20px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        input {
+            flex: 1;
+            padding: 11px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            font-size: 14px;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            padding: 11px 16px;
+            border-radius: 8px;
+            border: none;
+            background-color: #667eea;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s, transform 0.1s;
+        }
+
+        button:hover {
+            background-color: #5a67d8;
+        }
+
+        button:active {
+            transform: scale(0.97);
+        }
+
+        .count {
+            font-size: 13px;
+            color: #555;
+            margin-bottom: 10px;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f5f7ff;
+            padding: 10px 12px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            animation: fadeIn 0.2s ease-in;
+        }
+
+        li span {
+            word-break: break-word;
+        }
+
+        li button {
+            background-color: #e53e3e;
+            padding: 6px 10px;
+            font-size: 12px;
+        }
+
+        li button:hover {
+            background-color: #c53030;
+        }
+
+        .empty {
+            text-align: center;
+            color: #888;
+            font-size: 14px;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="card">
+    <h2>📝 Task Manager</h2>
+    <div class="subtitle">Simple Spring Boot + HTML app</div>
+
+    <div class="input-group">
+        <input id="taskInput" placeholder="Enter a new task">
+        <button onclick="addTask()">Add</button>
+    </div>
+
+    <div class="count" id="taskCount"></div>
+    <ul id="taskList"></ul>
+    <div class="empty" id="emptyState" style="display:none;">
+        No tasks yet. Add one 👆
+    </div>
+</div>
+
+<script>
+    const input = document.getElementById('taskInput');
+
+    input.addEventListener('keypress', e => {
+        if (e.key === 'Enter') addTask();
+    });
+
+    function loadTasks() {
+        fetch('/api/tasks')
+            .then(res => res.json())
+            .then(data => {
+                const list = document.getElementById('taskList');
+                const count = document.getElementById('taskCount');
+                const empty = document.getElementById('emptyState');
+
+                list.innerHTML = '';
+                count.textContent = `Tasks: ${data.length}`;
+
+                if (data.length === 0) {
+                    empty.style.display = 'block';
+                    return;
+                }
+
+                empty.style.display = 'none';
+
+                data.forEach(task => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        <span>${task.name}</span>
+                        <button onclick="deleteTask(${task.id})">Delete</button>
+                    `;
+                    list.appendChild(li);
+                });
+            });
+    }
+
+    function addTask() {
+        const name = input.value.trim();
+        if (!name) return;
+
+        fetch('/api/tasks', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name })
+        }).then(() => {
+            input.value = '';
+            loadTasks();
+        });
+    }
+
+    function deleteTask(id) {
+        fetch('/api/tasks/' + id, { method: 'DELETE' })
+            .then(loadTasks);
+    }
+
+    loadTasks();
+</script>
+
+</body>
+</html>
